@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oefentoets E achter B</title>
+<style>
+  :root {
+    --bg: #f5f6fa; --card: #ffffff; --text: #1d2433; --muted: #5b6475;
+    --primary: #1f4fa3; --primary-text: #ffffff; --border: #dde1ea;
+    --good: #1f8a4c; --good-bg: #e6f5ec; --bad: #c62828; --bad-bg: #fdeaea;
+    --accent: #e8731a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c; --card: #1c212b; --text: #e8ebf2; --muted: #a0a8b8;
+      --primary: #4d7fd6; --primary-text: #ffffff; --border: #2e3542;
+      --good: #4cc27d; --good-bg: #183324; --bad: #ef6b6b; --bad-bg: #3a1c1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; padding: 16px;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  header h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+  header p { margin: 0 0 16px; color: var(--muted); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 18px; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .question { font-size: 1.15rem; font-weight: 600; margin: 0 0 16px; }
+  .options { display: grid; gap: 10px; }
+  .opt {
+    text-align: left; font: inherit; color: var(--text); background: var(--card);
+    border: 2px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--primary); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { border-color: var(--good); background: var(--good-bg); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .feedback { margin-top: 16px; padding: 12px 14px; border-radius: 10px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-bg); }
+  .feedback.bad { background: var(--bad-bg); }
+  .feedback strong { display: block; margin-bottom: 4px; }
+  .hint-btn { background: none; border: none; color: var(--primary); font: inherit; cursor: pointer; padding: 0; margin-top: 12px; text-decoration: underline; }
+  .hint { color: var(--muted); font-style: italic; margin-top: 6px; display: none; }
+  .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .btn {
+    font: inherit; font-weight: 600; border: none; border-radius: 10px; padding: 12px 18px;
+    background: var(--primary); color: var(--primary-text); cursor: pointer;
+  }
+  .btn.secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  .btn[hidden] { display: none; }
+  .score { font-size: 2.5rem; font-weight: 700; margin: 8px 0; }
+  .review { margin-top: 18px; display: grid; gap: 12px; }
+  .review-item { border-left: 4px solid var(--bad); padding: 6px 12px; }
+  .review-item p { margin: 2px 0; }
+  .muted { color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Oefentoets E achter B</h1>
+    <p>Gebaseerd op de lesbrief van Rijschool Henk Vinke. Vragen en antwoorden staan elke keer in een andere volgorde.</p>
+  </header>
+
+  <main class="card" id="app"></main>
+
+  <footer>Oefenmateriaal – controleer twijfelgevallen altijd bij je instructeur.</footer>
+</div>
+
+<script>
+const QUESTIONS = [
+  { q: "Hoe lang duurt het praktijkexamen E achter B ongeveer?",
+    a: ["30 minuten", "15 minuten", "45 minuten", "60 minuten"],
+    e: "Het examen duurt ongeveer 30 minuten: eerst theorievragen over de aanhanger, daarna rijden." },
+  { q: "Hoeveel bijzondere verrichtingen krijg je tijdens het examen, en hoeveel moet je er kunnen?",
+    a: ["2 krijgen, 5 kunnen", "1 krijgen, 3 kunnen", "3 krijgen, 5 kunnen", "2 krijgen, 4 kunnen"],
+    e: "Je krijgt er twee, maar je moet alle vijf beheersen omdat je niet weet welke je krijgt." },
+  { q: "Welke van deze is GEEN bijzondere verrichting op het examen?",
+    a: ["Fileparkeren tussen twee auto's", "Hellingproef", "Keren door middel van een halve draai", "Via een bocht achteruitrijden in een denkbeeldige inrit, garage of laadplaats"],
+    e: "De vijf zijn: hellingproef, rechtuit achteruitrijden tot een afgesproken plek, via een bocht achteruit een inrit/garage/laadplaats in, keren via een zijstraat en keren met een halve draai.",
+    h: "Denk aan de vijf uit de lijst: helling, twee keer achteruit, twee keer keren." },
+  { q: "Welke bijzondere verrichting hoort WEL bij het examen?",
+    a: ["Keren met gebruikmaken van een zijstraat", "Achteruit inparkeren in een parkeervak", "Een noodstop maken", "Rotonde achteruit rijden"],
+    e: "Keren via een zijstraat is één van de vijf bijzondere verrichtingen." },
+  { q: "Wat is de maximumsnelheid met aanhanger op een autoweg of autosnelweg?",
+    a: ["90 km/u", "80 km/u", "100 km/u", "Gelijk aan de aangegeven snelheid"],
+    e: "Met aanhanger mag je op autoweg en autosnelweg maximaal 90 km/u." },
+  { q: "Op welke rijstroken van een auto(snel)weg mogen combinaties langer dan 7 meter rijden?",
+    a: ["De 1e en 2e rijstrook", "Alleen de 1e rijstrook", "Alle rijstroken", "Alle rijstroken behalve de spitsstrook"],
+    e: "Vrachtauto's en combinaties langer dan 7 meter mogen alleen op de 1e en 2e rijstrook." },
+  { q: "Hoe hoog mag de aanhanger inclusief lading maximaal zijn (vanaf de grond)?",
+    a: ["4 meter", "3,5 meter", "4,5 meter", "2,55 meter"],
+    e: "Maximaal 4 meter, gemeten vanaf de grond, inclusief lading." },
+  { q: "Hoe breed mag de aanhanger inclusief lading maximaal zijn?",
+    a: ["2,55 meter", "2,20 meter", "2,40 meter", "3 meter"],
+    e: "De maximale breedte is 2,55 meter, inclusief lading." },
+  { q: "Hoe lang mag de totale combinatie (auto + aanhanger) maximaal zijn?",
+    a: ["18,75 meter", "12 meter", "16,5 meter", "20 meter"],
+    e: "De totale combinatie mag niet langer zijn dan 18,75 meter." },
+  { q: "Waar vind je de hoogte van de aanhanger en de afmetingen van je auto?",
+    a: ["Niet op de kentekenpapieren; de afmetingen van de auto staan in het instructieboekje", "Op de kentekenpapieren", "Op het plaatje bij de trekhaak", "Op het identificatienummer van de aanhanger"],
+    e: "Hoogte van de aanhanger en hoogte/breedte/lengte van de auto staan niet op de kentekenpapieren. Voor de auto raadpleeg je het instructieboekje." },
+  { q: "De auto weegt 1350 kg en mag maximaal 1860 kg zijn. Wat is het laadvermogen van de auto?",
+    a: ["510 kg", "750 kg", "1350 kg", "3210 kg"],
+    e: "Laadvermogen = toegestane maximum massa − leeg gewicht: 1860 − 1350 = 510 kg.",
+    h: "Maximaal min leeg." },
+  { q: "De aanhanger weegt leeg 810 kg en heeft een maximaal toelaatbaar gewicht van 1760 kg. Wat is het laadvermogen?",
+    a: ["950 kg", "530 kg", "810 kg", "1340 kg"],
+    e: "1760 − 810 = 950 kg." },
+  { q: "Auto max. 1860 kg; aanhanger 810 kg met 530 kg lading. Wat is het totale gewicht van de combinatie volgens de lesbrief?",
+    a: ["3200 kg", "2670 kg", "3620 kg", "2690 kg"],
+    e: "Aanhanger werkelijk: 810 + 530 = 1340 kg. Combinatie: 1860 + 1340 = 3200 kg.",
+    h: "Tel eerst de aanhanger en zijn lading op." },
+  { q: "De T-Roc mag geremd 1500 kg trekken. Hoeveel mag hij ongeremd trekken?",
+    a: ["750 kg", "500 kg", "1000 kg", "1500 kg"],
+    e: "Geremd 1500 kg, ongeremd 750 kg (staat op de kentekenpapieren)." },
+  { q: "Welk type rem zit er op de lesaanhanger?",
+    a: ["Oplooprem, handrem en veiligheidskabel", "Alleen een handrem", "Elektrische rem", "Geen rem, de auto remt"],
+    e: "De aanhanger heeft een oplooprem, een handrem en een veiligheids- (losbreek)kabel." },
+  { q: "Wat is de minimale profieldiepte van de banden?",
+    a: ["1,6 mm", "1,0 mm", "2,0 mm", "3,0 mm"],
+    e: "Minimaal 1,6 mm profiel." },
+  { q: "Waarom moet het ventieldopje op het ventiel zitten?",
+    a: ["Om vuil tegen te houden, zodat het bij oppompen niet in de band komt", "Om de bandenspanning vast te houden", "Het is alleen voor de looks", "Om roest bij de wielmoeren te voorkomen"],
+    e: "Het dopje houdt vuil tegen; anders komt dat bij oppompen in de band en kan het schade veroorzaken." },
+  { q: "Waar controleer je de band op scheuren en bulten?",
+    a: ["Zijkanten (binnen- en buitenkant) en het loopvlak", "Alleen het loopvlak", "Alleen de buitenkant", "Alleen bij het ventiel"],
+    e: "Controleer beide zijkanten (binnen en buiten) en het loopvlak." },
+  { q: "Waar vind je de maximale kogeldruk van de trekhaak?",
+    a: ["Op het plaatje bij de trekhaak", "Op het registratieplaatje van de aanhanger", "Op de kentekenpapieren van de aanhanger", "Op de sticker op de koppeling"],
+    e: "De maximale kogeldruk staat op het plaatje bij de trekhaak. De maximale last onder de koppeling staat op het registratieplaatje van de aanhanger." },
+  { q: "De maximale kogeldruk van de trekhaak en de maximale last onder de koppeling van de aanhanger verschillen. Welke houd je aan?",
+    a: ["De laagste", "De hoogste", "Het gemiddelde", "Altijd die van de trekhaak"],
+    e: "Geen van beide mag worden overschreden, dus je houdt altijd de laagste aan." },
+  { q: "Wat is volgens de lesbrief de ideale kogeldruk?",
+    a: ["75% van de maximale kogeldruk", "25% van de maximale kogeldruk", "50% van de maximale kogeldruk", "100% van de maximale kogeldruk"],
+    e: "Ideaal is 75% van de maximale kogeldruk." },
+  { q: "Hoe bepaal je de kogeldruk?",
+    a: ["Balkje onder de koppeling op een weegschaal, en de aanhanger laten zakken met de draaipoot", "Op de kentekenpapieren aflezen", "Aan de koppeling hangen en voelen", "De auto op een weegbrug zetten"],
+    e: "Je zet een balkje onder de koppeling op een weegschaal en laat de aanhanger zakken met de draaipoot." },
+  { q: "Wanneer moet een aanhanger een losbreekreminrichting hebben?",
+    a: ["Als de toegestane maximum massa meer is dan 750 kg, of meer dan de helft van de ledige massa van de trekkende auto", "Altijd", "Alleen boven 3500 kg", "Alleen als de aanhanger geremd is"],
+    e: "Boven 750 kg TMM of meer dan de helft van de ledige massa van de auto is een losbreekreminrichting verplicht." },
+  { q: "Wat gebeurt er als de aanhanger losschiet van de kogel?",
+    a: ["De losbreekkabel trekt de handrem van de aanhanger aan en breekt, zodat de aanhanger remt en de auto niet meeneemt", "De verlichtingskabel trekt de rem aan", "De oplooprem blokkeert de auto", "Er gebeurt niets, je moet zelf remmen"],
+    e: "De kabel trekt de handrem aan en breekt daarna, zodat de aanhanger remt en de auto niet wordt meegetrokken." },
+  { q: "De handrem van de aanhanger is eraf. Hoe hoort de remstang er dan uit te zien?",
+    a: ["Slap", "Aangespannen", "Dat maakt niet uit", "Verticaal omhoog"],
+    e: "Handrem eraf = remstang slap. Is de stang dan aangespannen, dan is de reminrichting niet in orde." },
+  { q: "Hoe moet de kogelkoppeling liggen als de aanhanger is aangekoppeld?",
+    a: ["Nagenoeg horizontaal", "Schuin omhoog", "Schuin omlaag", "Maakt niet uit"],
+    e: "Voor een goede werking van de reminrichting moet de koppeling nagenoeg horizontaal liggen." },
+  { q: "Wat doe je met licht en motor voordat je de aanhanger aankoppelt (nadat je recht voor de koppeling staat)?",
+    a: ["Licht uit en motor af", "Licht aan en motor aan", "Alleen de motor af", "Alarmlichten aan"],
+    e: "Bij het aankoppelen: licht uit en motor af." },
+  { q: "Wat mag de instructeur aanwijzen bij het achteruitrijden naar de koppeling?",
+    a: ["Hoever je nog door mag rijden; links en rechts regel je zelf", "Links en rechts sturen", "Alles, de instructeur mag je volledig begeleiden", "Niets"],
+    e: "De instructeur mag aangeven hoever je door mag rijden (afstand tot de koppeling). Links en rechts moet je zelf regelen." },
+  { q: "Waar moet het aanwijzertje op de koppeling staan na het aankoppelen?",
+    a: ["Midden op het groene gedeelte van de sticker", "Op het rode gedeelte", "Helemaal links", "Er is geen aanwijzertje"],
+    e: "Het aanwijzertje moet in het midden op het groene gedeelte van het stikkertje staan." },
+  { q: "Hoe controleer je of de koppeling goed vastzit?",
+    a: ["Het steunwiel weer omhoogdraaien: komt de auto omhoog, dan zit hij goed vast", "Aan de aanhanger trekken met de hand", "Kijken of de verlichting werkt", "Een stukje achteruitrijden"],
+    e: "Draai het wieltje omhoog; als de auto omhoogkomt, zit de koppeling vast." },
+  { q: "Hoe controleer je de verlichting van de aanhanger?",
+    a: ["Auto op contact, dimlichten aan, remmen en met de rem ingetrapt richting links/rechts controleren", "Alleen de alarmlichten aanzetten", "Tijdens het rijden in de spiegel kijken", "Dat hoeft niet, dat doet de examinator"],
+    e: "Zet de auto op contact, dimlichten aan, remmen, en houd de rem ingetrapt terwijl je links/rechts controleert." },
+  { q: "Wat doe je bij het wegrijden na het aankoppelen?",
+    a: ["In rechtuitstand rijdend de rem intrappen en voelen of de aanhanger remt", "Meteen de snelweg op", "De handrem van de aanhanger aantrekken", "De kogeldruk opnieuw meten"],
+    e: "Je test de remmen: rechtuit rijden, remmen en voelen of de aanhanger meeremt." },
+  { q: "Wat doe je bij het afkoppelen direct na het stoppen van de combinatie?",
+    a: ["Zo'n 15 cm vooruitrijden om de oplooprem uit te veren", "Meteen de koppeling ontgrendelen", "De verlichtingskabel loshalen", "Het steunwiel helemaal naar beneden draaien"],
+    e: "Eerst ±15 cm vooruit (oplooprem uitveren), dan handrem erop, steunwiel licht op spanning, kabels eraf, koppeling ontgrendelen en steunwiel verder omlaag, auto afsluiten." },
+  { q: "Bij het afkoppelen: hoe ver draai je het steunwiel eerst naar beneden?",
+    a: ["Totdat het licht op spanning staat", "Helemaal tot de auto loskomt", "Niet, dat doe je pas na het ontgrendelen", "Tot het de grond net niet raakt"],
+    e: "Eerst tot het steunwiel licht op spanning staat. Na het ontgrendelen van de koppeling draai je het verder naar beneden." },
+  { q: "Van welke lamp is er op de aanhanger maar één verplicht?",
+    a: ["Mistachterlicht", "Stoplicht", "Richtingaanwijzer", "Achterlicht"],
+    e: "Eén mistachterlicht en één achteruitrijlicht zijn genoeg." },
+  { q: "Welke verlichting hoort NIET in de lijst met verplichte verlichting op de aanhanger?",
+    a: ["Grootlicht", "Kentekenplaatverlichting", "Zijmarkeringslichten", "Stadslichten"],
+    e: "Verplicht: achterlichten, stoplichten, stadslichten, richtingaanwijzers, kentekenplaatverlichting, één mistachterlicht, één achteruitrijlicht en zijmarkeringslichten." },
+  { q: "Welke reflectoren zijn verplicht op de aanhanger?",
+    a: ["Twee rode achter, twee witte voor, ambergele opzij", "Twee rode achter, twee ambergele voor, witte opzij", "Alleen twee rode achter", "Twee witte achter, twee rode voor"],
+    e: "Rood achter (2), wit voor (2), ambergeel aan de zijkant." },
+  { q: "Waar staat het identificatienummer van de aanhanger?",
+    a: ["Op de aanhanger én op de kentekenpapieren, en die moeten overeenkomen", "Alleen op de aanhanger", "Op het plaatje bij de trekhaak", "In het instructieboekje van de auto"],
+    e: "Het nummer staat op de aanhanger en op de kentekenpapieren; die moeten gelijk zijn." }
+];
+// Let op: in elke vraag hierboven is het EERSTE antwoord het juiste. De app husselt alles.
+
+const app = document.getElementById("app");
+let deck = [], index = 0, score = 0, mistakes = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildDeck(source) {
+  return shuffle(source).map(item => ({
+    ...item,
+    options: shuffle(item.a.map((text, i) => ({ text, correct: i === 0 })))
+  }));
+}
+
+function start(source = QUESTIONS) {
+  deck = buildDeck(source);
+  index = 0; score = 0; mistakes = [];
+  render();
+}
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function render() {
+  if (index >= deck.length) return renderResult();
+  const item = deck[index];
+  const pct = (index / deck.length) * 100;
+  app.innerHTML = `
+    <div class="meta"><span>Vraag ${index + 1} van ${deck.length}</span><span>Score: ${score}</span></div>
+    <div class="bar"><div style="width:${pct}%"></div></div>
+    <p class="question">${esc(item.q)}</p>
+    <div class="options">
+      ${item.options.map((o, i) => `<button class="opt" data-i="${i}">${esc(o.text)}</button>`).join("")}
+    </div>
+    ${item.h ? `<button class="hint-btn" id="hintBtn">Toon hint</button><div class="hint" id="hint">${esc(item.h)}</div>` : ""}
+    <div class="feedback" id="fb"></div>
+    <div class="actions"><button class="btn" id="next" hidden>${index + 1 === deck.length ? "Bekijk resultaat" : "Volgende vraag"}</button></div>
+  `;
+  app.querySelectorAll(".opt").forEach(btn => btn.addEventListener("click", () => answer(+btn.dataset.i)));
+  const hb = document.getElementById("hintBtn");
+  if (hb) hb.addEventListener("click", () => { document.getElementById("hint").style.display = "block"; hb.remove(); });
+  document.getElementById("next").addEventListener("click", () => { index++; render(); window.scrollTo(0, 0); });
+}
+
+function answer(i) {
+  const item = deck[index];
+  const buttons = app.querySelectorAll(".opt");
+  const chosen = item.options[i];
+  buttons.forEach((b, j) => {
+    b.disabled = true;
+    if (item.options[j].correct) b.classList.add("correct");
+  });
+  const fb = document.getElementById("fb");
+  if (chosen.correct) {
+    score++;
+    fb.className = "feedback show good";
+    fb.innerHTML = `<strong>Goed!</strong>${esc(item.e)}`;
+  } else {
+    buttons[i].classList.add("wrong");
+    mistakes.push({ ...item, chosen: chosen.text });
+    fb.className = "feedback show bad";
+    fb.innerHTML = `<strong>Helaas, niet goed.</strong>${esc(item.e)}`;
+  }
+  const next = document.getElementById("next");
+  next.hidden = false;
+  next.focus();
+}
+
+function renderResult() {
+  const pct = Math.round((score / deck.length) * 100);
+  const msg = pct === 100 ? "Perfect! Je kent alle regels." : pct >= 80 ? "Heel goed, bijna klaar voor het examen." : pct >= 60 ? "Op de goede weg, oefen de fouten nog eens." : "Blijf oefenen, lees de lesbrief nog eens door.";
+  app.innerHTML = `
+    <h2 style="margin-top:0">Resultaat</h2>
+    <div class="score">${score} / ${deck.length}</div>
+    <p class="muted">${pct}% goed – ${msg}</p>
+    <div class="actions">
+      ${mistakes.length ? `<button class="btn" id="retryWrong">Oefen alleen de fouten (${mistakes.length})</button>` : ""}
+      <button class="btn ${mistakes.length ? "secondary" : ""}" id="restart">Opnieuw (alle vragen)</button>
+    </div>
+    ${mistakes.length ? `<h3>Fout beantwoord</h3><div class="review">${mistakes.map(m => `
+      <div class="review-item">
+        <p><strong>${esc(m.q)}</strong></p>
+        <p class="muted">Jouw antwoord: ${esc(m.chosen)}</p>
+        <p>Juist: ${esc(m.a[0])}</p>
+      </div>`).join("")}</div>` : ""}
+  `;
+  document.getElementById("restart").addEventListener("click", () => start());
+  const rw = document.getElementById("retryWrong");
+  if (rw) {
+    const wrongSource = mistakes.map(({ q, a, e, h }) => ({ q, a, e, h }));
+    rw.addEventListener("click", () => start(wrongSource));
+  }
+}
+
+start();
+</script>
+</body>
+</html>
